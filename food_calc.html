@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>RER・DER & 給餌量計算アプリ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 16px;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    h1 {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    h2 {
+      font-size: 16px;
+      margin-top: 24px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    select, input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 16px;
+      font-size: 16px;
+    }
+    .result {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+      font-size: 14px;
+    }
+    .small-note {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>RER・DER & 給餌量計算</h1>
+
+<!-- ① 犬か猫か選択 -->
+<label>
+  種類を選択
+  <select id="species" onchange="updateFactorOptions()">
+    <option value="dog">犬</option>
+    <option value="cat">猫</option>
+  </select>
+</label>
+
+<!-- ② 体重入力 -->
+<label>
+  体重（kg）
+  <input type="number" id="weight" step="0.1" placeholder="例：10">
+</label>
+
+<!-- ④ 活動指数（活動係数） -->
+<label>
+  活動係数（ライフステージ・活動量）
+  <select id="factor">
+    <!-- JSで中身を入れ替える -->
+  </select>
+</label>
+
+<!-- フード情報 -->
+<h2>フード情報</h2>
+
+<!-- ⑥ 100gあたりのカロリー -->
+<label>
+  フードのカロリー（kcal / 100g）
+  <input type="number" id="kcalPer100g" step="1" placeholder="例：350">
+</label>
+
+<label>
+  1日の給餌回数
+  <input type="number" id="mealsPerDay" step="1" value="2">
+</label>
+<div class="small-note">
+  例：朝・晩の2回なら「2」、朝昼晩なら「3」
+</div>
+
+<button onclick="calculate()">計算する</button>
+
+<!-- 結果表示 -->
+<div class="result" id="resultBox" style="display:none;"></div>
+
+<script>
+// 犬・猫ごとに活動係数の候補を用意
+const factorOptions = {
+  dog: [
+    { label: "成犬・去勢済み（1.6）", value: 1.6 },
+    { label: "成犬・未去勢（1.8）", value: 1.8 },
+    { label: "成犬・肥満傾向（1.4）", value: 1.4 },
+    { label: "減量中（1.0）", value: 1.0 },
+    { label: "活動的な成犬（2.0）", value: 2.0 },
+    { label: "子犬 0〜4ヶ月（3.0）", value: 3.0 },
+    { label: "子犬 4ヶ月〜成犬まで（2.0）", value: 2.0 }
+  ],
+  cat: [
+    { label: "室内・去勢済み（1.2）", value: 1.2 },
+    { label: "成猫・去勢済み（1.4）", value: 1.4 },
+    { label: "成猫・未去勢（1.6）", value: 1.6 },
+    { label: "肥満傾向（1.0）", value: 1.0 },
+    { label: "減量中（0.8）", value: 0.8 },
+    { label: "成長期の子猫（2.5）", value: 2.5 }
+  ]
+};
+
+// 種類が変わったらセレクトの中身を差し替え
+function updateFactorOptions() {
+  const species = document.getElementById("species").value;
+  const factorSelect = document.getElementById("factor");
+  factorSelect.innerHTML = "";
+
+  factorOptions[species].forEach(opt => {
+    const o = document.createElement("option");
+    o.value = opt.value;
+    o.textContent = opt.label;
+    factorSelect.appendChild(o);
+  });
+}
+
+// RER計算（犬・猫どちらも基本は同じ式）
+// RER = 70 × (体重kg ^ 0.75)
+function calcRER(weightKg) {
+  return 70 * Math.pow(weightKg, 0.75);
+}
+
+function calculate() {
+  const species = document.getElementById("species").value;
+  const weight = parseFloat(document.getElementById("weight").value);
+  const factor = parseFloat(document.getElementById("factor").value);
+  const kcalPer100g = parseFloat(document.getElementById("kcalPer100g").value);
+  const mealsPerDay = parseInt(document.getElementById("mealsPerDay").value, 10);
+
+  const resultBox = document.getElementById("resultBox");
+
+  // 入力チェック
+  if (!weight || weight <= 0) {
+    resultBox.style.display = "block";
+    resultBox.innerHTML = "体重を正しく入力してください（例：10）";
+    return;
+  }
+  if (!factor || factor <= 0) {
+    resultBox.style.display = "block";
+    resultBox.innerHTML = "活動係数を選択してください。";
+    return;
+  }
+  if (!kcalPer100g || kcalPer100g <= 0) {
+    resultBox.style.display = "block";
+    resultBox.innerHTML = "フードの「kcal/100g」を入力してください。";
+    return;
+  }
+  if (!mealsPerDay || mealsPerDay <= 0) {
+    resultBox.style.display = "block";
+    resultBox.innerHTML = "1日の給餌回数を1以上で入力してください。";
+    return;
+  }
+
+  // ③ RER計算
+  const RER = calcRER(weight);
+
+  // ⑤ DER計算
+  const DER = RER * factor; // kcal / 日
+
+  // フード 1g あたりのカロリー
+  const kcalPerGram = kcalPer100g / 100.0;
+
+  // ⑦ 1日の給餌量(g) と 1回あたり(g)
+  const gramsPerDay = DER / kcalPerGram;
+  const gramsPerMeal = gramsPerDay / mealsPerDay;
+
+  // 結果を表示
+  resultBox.style.display = "block";
+  resultBox.innerHTML =
+    `<strong>種類：</strong>${species === "dog" ? "犬" : "猫"}<br>` +
+    `<strong>体重：</strong>${weight.toFixed(1)} kg<br><br>` +
+    `<strong>RER：</strong>${RER.toFixed(1)} kcal/日<br>` +
+    `<strong>DER：</strong>${DER.toFixed(1)} kcal/日<br><br>` +
+    `<strong>フード：</strong>${kcalPer100g.toFixed(0)} kcal / 100g<br>` +
+    `<strong>1日の給餌量：</strong>${gramsPerDay.toFixed(1)} g / 日<br>` +
+    `<strong>1回あたり：</strong${""}>${gramsPerMeal.toFixed(1)} g × ${mealsPerDay}回/日`;
+}
+
+// 初期表示で犬用の活動係数をセット
+updateFactorOptions();
+</script>
+
+</body>
+</html>
