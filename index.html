@@ -2,801 +2,826 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>フード量計算（犬・猫）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <title>フード量計算（多頭・犬猫対応）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    /* ---- 全体レイアウト・フォント ---- */
+    :root {
+      --primary: #1976d2;
+      --primary-soft: #e3f2fd;
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --text-main: #222;
+      --text-sub: #555;
+      --accent-red: #e53935;
+      --border: #e0e0e0;
+      --radius: 16px;
+      --shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: "Hiragino Sans", "Yu Gothic", -apple-system,
-                   BlinkMacSystemFont, system-ui, sans-serif;
+      margin: 0;
       padding: 16px;
-      max-width: 520px;
-      margin: 0 auto;
+      font-family: -apple-system, BlinkMacSystemFont, "Yu Gothic", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      font-size: 16px;
       line-height: 1.6;
-      background: #f5f5f5;
-      font-size: 17px;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
     }
+
+    .app {
+      width: 100%;
+      max-width: 520px;
+    }
+
     h1 {
-      font-size: 22px;
-      margin-bottom: 8px;
       text-align: center;
+      font-size: 26px;
+      margin: 8px 0 20px;
+      letter-spacing: .08em;
     }
+
     h2 {
-      font-size: 19px;
-      margin-top: 16px;
-      margin-bottom: 8px;
+      font-size: 22px;
+      margin: 0 0 8px;
     }
+
     h3 {
-      font-size: 17px;
-      margin-top: 14px;
-      margin-bottom: 6px;
+      font-size: 18px;
+      margin: 0 0 8px;
     }
-    .card {
-      background: #fff;
-      border-radius: 10px;
-      padding: 14px 14px 16px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.06);
-      margin-top: 12px;
+
+    h4 {
+      font-size: 16px;
+      margin: 16px 0 4px;
     }
-    label {
+
+    p {
+      margin: 4px 0;
+    }
+
+    /* ---- タブ ---- */
+    .tab-bar {
+      display: flex;
+      margin: 0 auto 20px;
+      background: #e0e0e0;
+      padding: 4px;
+      border-radius: 999px;
+    }
+
+    .tab-button {
+      flex: 1;
+      border-radius: 999px;
+      border: none;
+      padding: 10px 0;
       font-size: 15px;
+      background: transparent;
+      color: #666;
+      font-weight: 600;
+    }
+
+    .tab-button.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    /* ---- カード ---- */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px 16px 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    /* ---- フォーム類 ---- */
+    .field {
+      margin-bottom: 12px;
+    }
+
+    label {
       display: block;
+      font-size: 14px;
+      color: var(--text-sub);
       margin-bottom: 4px;
     }
+
     input[type="text"],
     input[type="number"],
     select {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      padding: 10px 12px;
       font-size: 15px;
-      box-sizing: border-box;
-      background: #fff;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      outline: none;
+      background: #fafafa;
     }
+
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
     button {
       border: none;
       border-radius: 999px;
-      padding: 8px 16px;
+      padding: 10px 18px;
       font-size: 15px;
       font-weight: 600;
       cursor: pointer;
-      background: #1976d2;
+    }
+
+    .btn-primary {
+      background: var(--primary);
       color: #fff;
     }
-    button.secondary {
-      background: #eee;
-      color: #333;
+
+    .btn-outline {
+      background: #fff;
+      color: var(--primary);
+      border: 1px solid var(--primary);
     }
-    button:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-    .row {
+
+    .button-row {
       display: flex;
       gap: 8px;
       align-items: center;
-      margin-top: 8px;
-    }
-    .row > * {
-      flex: 1;
-    }
-    .small {
-      font-size: 13px;
-      color: #666;
-    }
-    .pill-buttons {
-      display: inline-flex;
-      background: #e0e0e0;
-      border-radius: 999px;
-      padding: 2px;
-      margin: 8px 0 12px;
-    }
-    .pill-button {
-      border-radius: 999px;
-      padding: 6px 16px;
-      font-size: 14px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-    }
-    .pill-button.active {
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-    }
-    .tab-page {
-      display: none;
-    }
-    .tab-page.active {
-      display: block;
-    }
-    .pet-list {
-      display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
     }
-    .pet-chip {
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid #ccc;
-      background: #fff;
+
+    small {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    /* ---- 選択中の子の情報 ---- */
+    .current-name {
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+
+    .muted {
+      color: var(--text-sub);
       font-size: 14px;
-      cursor: pointer;
     }
-    .pet-chip.active {
-      background: #1976d2;
-      color: #fff;
-      border-color: #1976d2;
-    }
-    .divider {
-      height: 1px;
-      background: #e0e0e0;
-      margin: 12px 0;
-    }
-    .result-box {
-      background: #fafafa;
-      border-radius: 8px;
-      padding: 8px 10px;
-      margin-top: 10px;
+
+    /* ---- 結果表示 ---- */
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
       font-size: 15px;
     }
-    .result-highlight {
-      color: #e60033;
+
+    .result-label {
+      color: var(--text-sub);
+    }
+
+    .result-value {
       font-weight: 600;
     }
-    .svg-wrap {
-      margin-top: 8px;
-      border-radius: 8px;
-      background: #fafafa;
-      padding: 4px;
+
+    .highlight {
+      color: var(--accent-red);
+      font-weight: 700;
+      font-size: 18px;
     }
-    svg {
+
+    /* ---- グラフ領域 ---- */
+    .graph-container {
+      margin-top: 8px;
+      background: #fafafa;
+      border-radius: 12px;
+      padding: 8px;
+      border: 1px dashed var(--border);
+    }
+
+    canvas {
       width: 100%;
-      height: 150px;
+      max-width: 480px;
+      height: 160px;
+      display: block;
+      margin-top: 4px;
+    }
+
+    .weight-history {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    /* ---- セクション表示切り替え ---- */
+    .species-section {
+      display: none;
+    }
+
+    .species-section.active {
+      display: block;
+    }
+
+    @media (min-width: 560px) {
+      body {
+        padding: 24px;
+        font-size: 17px;
+      }
+      h1 {
+        font-size: 28px;
+      }
     }
   </style>
 </head>
 <body>
+<div class="app">
   <h1>フード量計算</h1>
 
-  <div style="text-align:center;">
-    <div class="pill-buttons">
-      <button id="tabDogBtn" class="pill-button active">犬の計算</button>
-      <button id="tabCatBtn" class="pill-button">猫の計算</button>
-    </div>
+  <!-- タブ -->
+  <div class="tab-bar">
+    <button id="tabDog" class="tab-button active" type="button">犬の計算</button>
+    <button id="tabCat" class="tab-button" type="button">猫の計算</button>
   </div>
 
-  <!-- 犬タブ -->
-  <div id="dogPage" class="tab-page active">
+  <!-- 犬セクション -->
+  <section id="dogSection" class="species-section active">
+    <!-- 犬の情報 -->
     <div class="card">
-      <h2>犬の情報</h2>
+      <div class="section-title">
+        <h2>犬の情報</h2>
+      </div>
 
-      <h3>犬の一覧</h3>
-      <div id="dogList" class="pet-list"></div>
+      <!-- 犬の一覧 -->
+      <div class="field">
+        <h3>犬の一覧</h3>
+        <label for="dogSelect">登録されている犬</label>
+        <select id="dogSelect">
+          <option value="">犬を選択</option>
+        </select>
+      </div>
 
-      <div class="divider"></div>
-
-      <h3>犬を追加</h3>
-      <label>名前</label>
-      <input type="text" id="dogNameInput" placeholder="例）てつろう">
-      <button id="addDogBtn" style="margin-top:8px;">犬を登録する</button>
-      <p class="small">※ 登録後、一覧の名前をタップするとその子の画面が開きます。</p>
+      <!-- 犬を追加 -->
+      <div class="field">
+        <h3>犬を追加</h3>
+        <label for="newDogName">名前</label>
+        <input id="newDogName" type="text" placeholder="例）てつろう">
+      </div>
+      <div class="field button-row">
+        <button class="btn-primary" type="button" onclick="addDog()">犬を登録する</button>
+      </div>
+      <small>※ 登録後、一覧から名前を選ぶとその子の画面が開きます。</small>
     </div>
 
-    <div class="card" id="dogDetailCard" style="display:none;">
-      <h2 id="dogTitle">選択中の犬</h2>
-
-      <label>最新の体重（kg）を記録</label>
-      <div class="row">
-        <input type="number" id="dogWeightInput" step="0.01" placeholder="例）12.3">
-        <button id="dogAddWeightBtn">体重を追加</button>
-      </div>
-      <p class="small" id="dogLatestWeightText">最新の体重: -</p>
-
-      <label style="margin-top:12px;">活動レベル（係数）</label>
-      <select id="dogActivitySelect">
-        <option value="neutered">避妊・去勢している成犬</option>
-        <option value="intact">避妊・去勢していない成犬</option>
-        <option value="diet">減量</option>
-        <option value="senior">高齢犬</option>
-      </select>
-      <p class="small" id="dogActivityInfo">現在の係数: 1.6</p>
-
-      <label style="margin-top:12px;">1日の食事回数</label>
-      <select id="dogMealsSelect">
-        <option value="1">1回</option>
-        <option value="2" selected>2回（おすすめ）</option>
-        <option value="3">3回</option>
-        <option value="4">4回</option>
-      </select>
-
-      <label style="margin-top:12px;">フード 100g あたりのカロリー（kcal）</label>
-      <input type="number" id="dogFoodKcalInput" placeholder="例）350">
-
-      <button id="dogCalcBtn" style="margin-top:12px;">フード量を計算する</button>
-
-      <div class="result-box" id="dogResultBox" style="display:none;">
-        <div>RER（基礎エネルギー）: <span id="dogRerSpan"></span> kcal</div>
-        <div>DER（1日の必要エネルギー）: <span id="dogDerSpan"></span> kcal</div>
-        <div>1日の給餌量: <span id="dogDailyGram" class="result-highlight"></span> g</div>
-        <div>1回あたりの給餌量: <span id="dogPerMealGram" class="result-highlight"></span> g</div>
+    <!-- 選択中の犬の設定＆結果 -->
+    <div id="dogDetailCard" class="card" style="display:none;">
+      <div class="section-title">
+        <h2 id="dogTitle">犬：</h2>
       </div>
 
-      <h3 style="margin-top:16px;">体重の推移</h3>
-      <p class="small" id="dogNoWeightMsg">まだ体重が記録されていません。</p>
-      <ul class="small" id="dogWeightList" style="margin-top:4px; padding-left:18px;"></ul>
+      <!-- 体重入力 -->
+      <div class="field">
+        <label for="dogWeight">最新の体重（kg）を記録</label>
+        <input id="dogWeight" type="number" step="0.1" min="0" placeholder="例）12.3">
+      </div>
+      <div class="field button-row">
+        <button class="btn-outline" type="button" onclick="addWeight('dog')">体重を追加</button>
+        <span class="muted">※ 体重を入れると RER・DER が計算されます。</span>
+      </div>
 
-      <div class="svg-wrap" id="dogChartWrap" style="display:none;">
-        <svg id="dogChart"></svg>
+      <!-- 体重履歴とグラフ -->
+      <div class="graph-container">
+        <div class="muted">体重の推移（最新10件まで）</div>
+        <canvas id="dogCanvas" width="400" height="160"></canvas>
+        <div id="dogHistory" class="weight-history"></div>
+      </div>
+
+      <!-- フード情報・活動係数 -->
+      <h3 style="margin-top:14px;">給餌設定</h3>
+
+      <div class="field">
+        <label for="dogFoodKcal">フードのカロリー（kcal / 100 g）</label>
+        <input id="dogFoodKcal" type="number" step="1" min="0" placeholder="例）360">
+      </div>
+
+      <div class="field">
+        <label for="dogActivity">活動レベル</label>
+        <select id="dogActivity">
+          <option value="neutered">避妊・去勢している成犬（1.6）</option>
+          <option value="intact">避妊・去勢していない成犬（1.8）</option>
+          <option value="diet">減量（1.0）</option>
+          <option value="senior">高齢犬（1.4）</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="dogMeals">1日の食事回数</label>
+        <select id="dogMeals">
+          <option value="1">1回</option>
+          <option value="2" selected>2回（デフォルト）</option>
+          <option value="3">3回</option>
+          <option value="4">4回</option>
+        </select>
+      </div>
+
+      <!-- 計算結果 -->
+      <h3 style="margin-top:14px;">計算結果</h3>
+      <p class="muted">※ 小数点はすべて四捨五入して整数で表示します。</p>
+
+      <div class="result-row">
+        <div class="result-label">RER（安静時必要エネルギー）</div>
+        <div id="dogRer" class="result-value">-- kcal/日</div>
+      </div>
+
+      <div class="result-row">
+        <div class="result-label">DER（1日の必要エネルギー）</div>
+        <div id="dogDer" class="result-value">-- kcal/日</div>
+      </div>
+
+      <div class="result-row">
+        <div class="result-label">1日の給餌量</div>
+        <div><span id="dogDailyGram" class="highlight">--</span> g/日</div>
+      </div>
+
+      <div class="result-row">
+        <div class="result-label">1回あたりの給餌量</div>
+        <div><span id="dogPerMealGram" class="highlight">--</span> g/回</div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- 猫タブ -->
-  <div id="catPage" class="tab-page">
+  <!-- 猫セクション -->
+  <section id="catSection" class="species-section">
+    <!-- 猫の情報 -->
     <div class="card">
-      <h2>猫の情報</h2>
+      <div class="section-title">
+        <h2>猫の情報</h2>
+      </div>
 
-      <h3>猫の一覧</h3>
-      <div id="catList" class="pet-list"></div>
+      <!-- 猫の一覧 -->
+      <div class="field">
+        <h3>猫の一覧</h3>
+        <label for="catSelect">登録されている猫</label>
+        <select id="catSelect">
+          <option value="">猫を選択</option>
+        </select>
+      </div>
 
-      <div class="divider"></div>
-
-      <h3>猫を追加</h3>
-      <label>名前</label>
-      <input type="text" id="catNameInput" placeholder="例）ひまわり">
-      <button id="addCatBtn" style="margin-top:8px;">猫を登録する</button>
-      <p class="small">※ 登録後、一覧の名前をタップするとその子の画面が開きます。</p>
+      <!-- 猫を追加 -->
+      <div class="field">
+        <h3>猫を追加</h3>
+        <label for="newCatName">名前</label>
+        <input id="newCatName" type="text" placeholder="例）ひまわり">
+      </div>
+      <div class="field button-row">
+        <button class="btn-primary" type="button" onclick="addCat()">猫を登録する</button>
+      </div>
+      <small>※ 登録後、一覧から名前を選ぶとその子の画面が開きます。</small>
     </div>
 
-    <div class="card" id="catDetailCard" style="display:none;">
-      <h2 id="catTitle">選択中の猫</h2>
-
-      <label>最新の体重（kg）を記録</label>
-      <div class="row">
-        <input type="number" id="catWeightInput" step="0.01" placeholder="例）4.2">
-        <button id="catAddWeightBtn">体重を追加</button>
-      </div>
-      <p class="small" id="catLatestWeightText">最新の体重: -</p>
-
-      <label style="margin-top:12px;">活動レベル（係数）</label>
-      <select id="catActivitySelect">
-        <option value="neutered">避妊・去勢している成猫</option>
-        <option value="intact">避妊・去勢していない成猫</option>
-        <option value="diet">減量</option>
-        <option value="senior">高齢猫</option>
-      </select>
-      <p class="small" id="catActivityInfo">現在の係数: 1.2</p>
-
-      <label style="margin-top:12px;">1日の食事回数</label>
-      <select id="catMealsSelect">
-        <option value="1">1回</option>
-        <option value="2" selected>2回（おすすめ）</option>
-        <option value="3">3回</option>
-        <option value="4">4回</option>
-      </select>
-
-      <label style="margin-top:12px;">フード 100g あたりのカロリー（kcal）</label>
-      <input type="number" id="catFoodKcalInput" placeholder="例）380">
-
-      <button id="catCalcBtn" style="margin-top:12px;">フード量を計算する</button>
-
-      <div class="result-box" id="catResultBox" style="display:none;">
-        <div>RER（基礎エネルギー）: <span id="catRerSpan"></span> kcal</div>
-        <div>DER（1日の必要エネルギー）: <span id="catDerSpan"></span> kcal</div>
-        <div>1日の給餌量: <span id="catDailyGram" class="result-highlight"></span> g</div>
-        <div>1回あたりの給餌量: <span id="catPerMealGram" class="result-highlight"></span> g</div>
+    <!-- 選択中の猫の設定＆結果 -->
+    <div id="catDetailCard" class="card" style="display:none;">
+      <div class="section-title">
+        <h2 id="catTitle">猫：</h2>
       </div>
 
-      <h3 style="margin-top:16px;">体重の推移</h3>
-      <p class="small" id="catNoWeightMsg">まだ体重が記録されていません。</p>
-      <ul class="small" id="catWeightList" style="margin-top:4px; padding-left:18px;"></ul>
+      <!-- 体重入力 -->
+      <div class="field">
+        <label for="catWeight">最新の体重（kg）を記録</label>
+        <input id="catWeight" type="number" step="0.1" min="0" placeholder="例）4.2">
+      </div>
+      <div class="field button-row">
+        <button class="btn-outline" type="button" onclick="addWeight('cat')">体重を追加</button>
+        <span class="muted">※ 体重を入れると RER・DER が計算されます。</span>
+      </div>
 
-      <div class="svg-wrap" id="catChartWrap" style="display:none;">
-        <svg id="catChart"></svg>
+      <!-- 体重履歴とグラフ -->
+      <div class="graph-container">
+        <div class="muted">体重の推移（最新10件まで）</div>
+        <canvas id="catCanvas" width="400" height="160"></canvas>
+        <div id="catHistory" class="weight-history"></div>
+      </div>
+
+      <!-- フード情報・活動係数 -->
+      <h3 style="margin-top:14px;">給餌設定</h3>
+
+      <div class="field">
+        <label for="catFoodKcal">フードのカロリー（kcal / 100 g）</label>
+        <input id="catFoodKcal" type="number" step="1" min="0" placeholder="例）360">
+      </div>
+
+      <div class="field">
+        <label for="catActivity">活動レベル</label>
+        <select id="catActivity">
+          <option value="neutered">避妊・去勢している成猫（1.2）</option>
+          <option value="intact">避妊・去勢していない成猫（1.4）</option>
+          <option value="diet">減量（0.8）</option>
+          <option value="senior">高齢猫（1.1）</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="catMeals">1日の食事回数</label>
+        <select id="catMeals">
+          <option value="1">1回</option>
+          <option value="2" selected>2回（デフォルト）</option>
+          <option value="3">3回</option>
+          <option value="4">4回</option>
+        </select>
+      </div>
+
+      <!-- 計算結果 -->
+      <h3 style="margin-top:14px;">計算結果</h3>
+      <p class="muted">※ 小数点はすべて四捨五入して整数で表示します。</p>
+
+      <div class="result-row">
+        <div class="result-label">RER（安静時必要エネルギー）</div>
+        <div id="catRer" class="result-value">-- kcal/日</div>
+      </div>
+
+      <div class="result-row">
+        <div class="result-label">DER（1日の必要エネルギー）</div>
+        <div id="catDer" class="result-value">-- kcal/日</div>
+      </div>
+
+      <div class="result-row">
+        <div class="result-label">1日の給餌量</div>
+        <div><span id="catDailyGram" class="highlight">--</span> g/日</div>
+      </div>
+
+      <div class="result-row">
+        <div class="result-label">1回あたりの給餌量</div>
+        <div><span id="catPerMealGram" class="highlight">--</span> g/回</div>
       </div>
     </div>
-  </div>
+  </section>
+</div>
 
-  <script>
-    const STORAGE_KEY = "food_calc_pets_v2";
+<script>
+  /* =======================
+     データの保存形式
+     =======================
+     localStorage
+       dogs: [{ name: "キキ", weights:[{date:"2025-12-04", value: 12.3}, ...] }, ...]
+       cats: [{ ... }]
+  */
 
-    // pets = [{id,name,species,activity,meals,kcal,weights:[{date,weight}]}]
-    let pets = loadPets();
+  // ---- ユーティリティ ----
+  function loadList(key) {
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  }
 
-    function loadPets() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const data = raw ? JSON.parse(raw) : [];
-        return Array.isArray(data) ? data : [];
-      } catch {
-        return [];
+  function saveList(key, list) {
+    localStorage.setItem(key, JSON.stringify(list));
+  }
+
+  function todayISO() {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${m}-${day}`;
+  }
+
+  // ---- 犬・猫の一覧をセレクトへ反映 ----
+  function refreshSelect(species) {
+    const key = species === "dog" ? "dogs" : "cats";
+    const selectId = species === "dog" ? "dogSelect" : "catSelect";
+    const list = loadList(key);
+    const select = document.getElementById(selectId);
+
+    select.innerHTML = `<option value="">${species === "dog" ? "犬" : "猫"}を選択</option>`;
+    list.forEach((item, idx) => {
+      const opt = document.createElement("option");
+      opt.value = String(idx);
+      opt.textContent = item.name;
+      select.appendChild(opt);
+    });
+  }
+
+  // ---- 新規登録 ----
+  function addDog() {
+    const nameInput = document.getElementById("newDogName");
+    const name = nameInput.value.trim();
+    if (!name) {
+      alert("犬の名前を入力してください。");
+      return;
+    }
+    const list = loadList("dogs");
+    list.push({ name, weights: [] });
+    saveList("dogs", list);
+    nameInput.value = "";
+    refreshSelect("dog");
+    document.getElementById("dogSelect").value = String(list.length - 1);
+    onSelectChange("dog");
+  }
+
+  function addCat() {
+    const nameInput = document.getElementById("newCatName");
+    const name = nameInput.value.trim();
+    if (!name) {
+      alert("猫の名前を入力してください。");
+      return;
+    }
+    const list = loadList("cats");
+    list.push({ name, weights: [] });
+    saveList("cats", list);
+    nameInput.value = "";
+    refreshSelect("cat");
+    document.getElementById("catSelect").value = String(list.length - 1);
+    onSelectChange("cat");
+  }
+
+  // ---- セレクト変更時 ----
+  function onSelectChange(species) {
+    const selectId = species === "dog" ? "dogSelect" : "catSelect";
+    const detailId = species === "dog" ? "dogDetailCard" : "catDetailCard";
+    const titleId = species === "dog" ? "dogTitle" : "catTitle";
+
+    const select = document.getElementById(selectId);
+    const idx = select.value;
+    const list = loadList(species === "dog" ? "dogs" : "cats");
+
+    const card = document.getElementById(detailId);
+
+    if (idx === "" || !list[idx]) {
+      card.style.display = "none";
+      return;
+    }
+    const pet = list[idx];
+    card.style.display = "block";
+    document.getElementById(titleId).textContent =
+      (species === "dog" ? "犬：" : "猫：") + pet.name;
+
+    // 体重入力欄を空に
+    if (species === "dog") {
+      document.getElementById("dogWeight").value = "";
+    } else {
+      document.getElementById("catWeight").value = "";
+    }
+
+    // 体重履歴＆グラフを更新
+    renderWeights(species, pet.weights);
+
+    // 計算も更新
+    recalc(species);
+  }
+
+  // ---- 体重追加 ----
+  function addWeight(species) {
+    const selectId = species === "dog" ? "dogSelect" : "catSelect";
+    const weightId = species === "dog" ? "dogWeight" : "catWeight";
+    const listKey = species === "dog" ? "dogs" : "cats";
+
+    const select = document.getElementById(selectId);
+    const idx = select.value;
+    if (idx === "") {
+      alert(`${species === "dog" ? "犬" : "猫"}を選択してください。`);
+      return;
+    }
+
+    const weightInput = document.getElementById(weightId);
+    const w = parseFloat(weightInput.value);
+    if (isNaN(w) || w <= 0) {
+      alert("正しい体重（kg）を入力してください。");
+      return;
+    }
+
+    const list = loadList(listKey);
+    const pet = list[idx];
+    pet.weights.push({ date: todayISO(), value: w });
+    // 最新10件だけ残す
+    if (pet.weights.length > 10) {
+      pet.weights = pet.weights.slice(pet.weights.length - 10);
+    }
+    saveList(listKey, list);
+    weightInput.value = "";
+
+    renderWeights(species, pet.weights);
+    recalc(species);
+  }
+
+  // ---- グラフ・履歴描画 ----
+  function renderWeights(species, weights) {
+    const canvasId = species === "dog" ? "dogCanvas" : "catCanvas";
+    const historyId = species === "dog" ? "dogHistory" : "catHistory";
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    if (!weights || weights.length === 0) {
+      ctx.fillStyle = "#999";
+      ctx.font = "13px -apple-system, 'Yu Gothic'";
+      ctx.fillText("まだ体重データがありません。", 10, h / 2);
+      document.getElementById(historyId).textContent = "";
+      return;
+    }
+
+    // 履歴テキスト
+    const historyText = weights
+      .map(item => `${item.date}: ${item.value.toFixed(1)} kg`)
+      .join(" ／ ");
+    document.getElementById(historyId).textContent = historyText;
+
+    if (weights.length === 1) {
+      ctx.fillStyle = "#1976d2";
+      ctx.beginPath();
+      ctx.arc(w / 2, h / 2, 4, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+
+    const values = weights.map(x => x.value);
+    const minV = Math.min.apply(null, values);
+    const maxV = Math.max.apply(null, values);
+    const padding = 20;
+    const xStep = (w - padding * 2) / (weights.length - 1);
+    const range = maxV - minV || 1;
+
+    ctx.strokeStyle = "#bbdefb";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding, h - padding);
+    ctx.lineTo(w - padding, h - padding);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#1976d2";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    weights.forEach((item, i) => {
+      const x = padding + xStep * i;
+      const y = padding + (1 - (item.value - minV) / range) * (h - padding * 2);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    ctx.fillStyle = "#1976d2";
+    weights.forEach((item, i) => {
+      const x = padding + xStep * i;
+      const y = padding + (1 - (item.value - minV) / range) * (h - padding * 2);
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  // ---- 活動係数 ----
+  function getActivityFactor(species, value) {
+    if (species === "dog") {
+      switch (value) {
+        case "intact": return 1.8;
+        case "neutered": return 1.6;
+        case "diet": return 1.0;
+        case "senior": return 1.4;
+        default: return 1.6;
+      }
+    } else {
+      // cat
+      switch (value) {
+        case "intact": return 1.4;
+        case "neutered": return 1.2;
+        case "diet": return 0.8;
+        case "senior": return 1.1;
+        default: return 1.2;
       }
     }
-    function savePets() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pets));
-    }
-    function generateId() {
-      return "p_" + Math.random().toString(36).slice(2, 9);
-    }
-    function getPetsBySpecies(s) {
-      return pets.filter(p => p.species === s);
-    }
-    function getPetById(id) {
-      return pets.find(p => p.id === id) || null;
-    }
-    function getToday() {
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    }
-    function latestWeight(pet) {
-      if (!pet.weights || pet.weights.length === 0) return null;
-      return pet.weights[pet.weights.length - 1];
-    }
-    function roundInt(v) {
-      return Math.round(v);
-    }
-    function formatDate(d) {
-      return d.replace(/-/g, "/");
-    }
+  }
 
-    const ACTIVITY = {
-      dog: { neutered: 1.6, intact: 1.8, diet: 1.0, senior: 1.4 },
-      cat: { neutered: 1.2, intact: 1.4, diet: 0.8, senior: 1.1 }
-    };
-    function getK(species, key) {
-      return ACTIVITY[species]?.[key] ?? 1.0;
-    }
+  // ---- 計算 ----
+  function recalc(species) {
+    const isDog = species === "dog";
+    const selectId = isDog ? "dogSelect" : "catSelect";
+    const listKey = isDog ? "dogs" : "cats";
 
-    // タブ切り替え
-    const tabDogBtn = document.getElementById("tabDogBtn");
-    const tabCatBtn = document.getElementById("tabCatBtn");
-    const dogPage = document.getElementById("dogPage");
-    const catPage = document.getElementById("catPage");
+    const select = document.getElementById(selectId);
+    const idx = select.value;
+    const list = loadList(listKey);
+    const pet = list[idx];
 
-    tabDogBtn.onclick = () => {
-      tabDogBtn.classList.add("active");
-      tabCatBtn.classList.remove("active");
-      dogPage.classList.add("active");
-      catPage.classList.remove("active");
-    };
-    tabCatBtn.onclick = () => {
-      tabCatBtn.classList.add("active");
-      tabDogBtn.classList.remove("active");
-      catPage.classList.add("active");
-      dogPage.classList.remove("active");
-    };
+    const rerId = isDog ? "dogRer" : "catRer";
+    const derId = isDog ? "dogDer" : "catDer";
+    const dailyId = isDog ? "dogDailyGram" : "catDailyGram";
+    const perMealId = isDog ? "dogPerMealGram" : "catPerMealGram";
+    const foodId = isDog ? "dogFoodKcal" : "catFoodKcal";
+    const actId = isDog ? "dogActivity" : "catActivity";
+    const mealId = isDog ? "dogMeals" : "catMeals";
 
-    // ---- 犬 ----
-    const dogListEl = document.getElementById("dogList");
-    const dogNameInput = document.getElementById("dogNameInput");
-    const addDogBtn = document.getElementById("addDogBtn");
-    const dogDetailCard = document.getElementById("dogDetailCard");
-    const dogTitle = document.getElementById("dogTitle");
-    const dogWeightInput = document.getElementById("dogWeightInput");
-    const dogAddWeightBtn = document.getElementById("dogAddWeightBtn");
-    const dogLatestWeightText = document.getElementById("dogLatestWeightText");
-    const dogActivitySelect = document.getElementById("dogActivitySelect");
-    const dogActivityInfo = document.getElementById("dogActivityInfo");
-    const dogMealsSelect = document.getElementById("dogMealsSelect");
-    const dogFoodKcalInput = document.getElementById("dogFoodKcalInput");
-    const dogCalcBtn = document.getElementById("dogCalcBtn");
-    const dogResultBox = document.getElementById("dogResultBox");
-    const dogRerSpan = document.getElementById("dogRerSpan");
-    const dogDerSpan = document.getElementById("dogDerSpan");
-    const dogDailyGramSpan = document.getElementById("dogDailyGram");
-    const dogPerMealGramSpan = document.getElementById("dogPerMealGram");
-    const dogNoWeightMsg = document.getElementById("dogNoWeightMsg");
-    const dogWeightList = document.getElementById("dogWeightList");
-    const dogChartWrap = document.getElementById("dogChartWrap");
-    const dogChart = document.getElementById("dogChart");
+    const rerEl = document.getElementById(rerId);
+    const derEl = document.getElementById(derId);
+    const dailyEl = document.getElementById(dailyId);
+    const perMealEl = document.getElementById(perMealId);
 
-    let currentDogId = null;
+    // デフォルト表示
+    let rerText = "-- kcal/日";
+    let derText = "-- kcal/日";
+    let dailyText = "--";
+    let perMealText = "--";
 
-    function renderDogList() {
-      const dogs = getPetsBySpecies("dog");
-      dogListEl.innerHTML = "";
-      if (dogs.length === 0) {
-        const span = document.createElement("span");
-        span.className = "small";
-        span.textContent = "まだ登録されていません。";
-        dogListEl.appendChild(span);
-        dogDetailCard.style.display = "none";
-        return;
-      }
-      dogs.forEach(p => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "pet-chip" + (p.id === currentDogId ? " active" : "");
-        b.textContent = p.name;
-        b.onclick = () => {
-          currentDogId = p.id;
-          renderDogList();
-          showDog();
-        };
-        dogListEl.appendChild(b);
-      });
+    if (!pet || !pet.weights || pet.weights.length === 0) {
+      rerEl.textContent = rerText;
+      derEl.textContent = derText;
+      dailyEl.textContent = dailyText;
+      perMealEl.textContent = perMealText;
+      return;
     }
 
-    addDogBtn.onclick = () => {
-      const name = dogNameInput.value.trim();
-      if (!name) { alert("名前を入力してください。"); return; }
-      const pet = {
-        id: generateId(),
-        name,
-        species: "dog",
-        activity: "neutered",
-        meals: 2,
-        kcal: null,
-        weights: []
-      };
-      pets.push(pet);
-      savePets();
-      dogNameInput.value = "";
-      currentDogId = pet.id;
-      renderDogList();
-      showDog();
-    };
+    // 最新の体重
+    const latest = pet.weights[pet.weights.length - 1].value;
+    const rer = 70 * Math.pow(latest, 0.75);
 
-    dogAddWeightBtn.onclick = () => {
-      const pet = getPetById(currentDogId);
-      if (!pet) return;
-      const w = parseFloat(dogWeightInput.value);
-      if (!w || w <= 0) { alert("体重を正しく入力してください。"); return; }
-      pet.weights.push({ date: getToday(), weight: w });
-      savePets();
-      dogWeightInput.value = "";
-      showDog();
-    };
+    const actSelect = document.getElementById(actId);
+    const factor = getActivityFactor(species, actSelect.value);
+    const der = rer * factor;
 
-    dogActivitySelect.onchange = () => {
-      const pet = getPetById(currentDogId);
-      if (!pet) return;
-      pet.activity = dogActivitySelect.value;
-      savePets();
-      updateDogActivityInfo(pet);
-      calcDog(false);
-    };
+    const foodKcalPer100 = parseFloat(document.getElementById(foodId).value);
+    const meals = parseInt(document.getElementById(mealId).value, 10) || 1;
 
-    dogMealsSelect.onchange = () => {
-      const pet = getPetById(currentDogId);
-      if (!pet) return;
-      pet.meals = parseInt(dogMealsSelect.value) || 2;
-      savePets();
-      calcDog(false);
-    };
+    // 四捨五入（整数）
+    const rerRound = Math.round(rer);
+    const derRound = Math.round(der);
 
-    dogFoodKcalInput.onchange = () => {
-      const pet = getPetById(currentDogId);
-      if (!pet) return;
-      const v = parseFloat(dogFoodKcalInput.value);
-      pet.kcal = v > 0 ? v : null;
-      savePets();
-      calcDog(false);
-    };
+    rerText = `${rerRound} kcal/日`;
+    derText = `${derRound} kcal/日`;
 
-    dogCalcBtn.onclick = () => calcDog(true);
+    let dailyGram = null;
+    let perMealGram = null;
 
-    function updateDogActivityInfo(pet) {
-      const k = getK("dog", pet.activity);
-      dogActivityInfo.textContent = `現在の係数: ${k}`;
+    if (!isNaN(foodKcalPer100) && foodKcalPer100 > 0) {
+      const kcalPerGram = foodKcalPer100 / 100;
+      dailyGram = der / kcalPerGram;
+      perMealGram = dailyGram / meals;
+
+      dailyGram = Math.round(dailyGram);
+      perMealGram = Math.round(perMealGram);
+
+      dailyText = String(dailyGram);
+      perMealText = String(perMealGram);
     }
 
-    function showDog() {
-      const pet = getPetById(currentDogId);
-      if (!pet) { dogDetailCard.style.display = "none"; return; }
-      dogDetailCard.style.display = "block";
-      dogTitle.textContent = `犬：${pet.name}`;
-      dogActivitySelect.value = pet.activity;
-      dogMealsSelect.value = String(pet.meals || 2);
-      dogFoodKcalInput.value = pet.kcal || "";
-      updateDogActivityInfo(pet);
+    rerEl.textContent = rerText;
+    derEl.textContent = derText;
+    dailyEl.textContent = dailyText;
+    perMealEl.textContent = perMealText;
+  }
 
-      if (!pet.weights.length) {
-        dogNoWeightMsg.style.display = "block";
-        dogWeightList.innerHTML = "";
-        dogChartWrap.style.display = "none";
-        dogLatestWeightText.textContent = "最新の体重: -";
-      } else {
-        dogNoWeightMsg.style.display = "none";
-        dogWeightList.innerHTML = "";
-        pet.weights.forEach(w => {
-          const li = document.createElement("li");
-          li.textContent = `${formatDate(w.date)} : ${w.weight} kg`;
-          dogWeightList.appendChild(li);
-        });
-        const last = latestWeight(pet);
-        dogLatestWeightText.textContent = `最新の体重: ${last.weight} kg（${formatDate(last.date)}）`;
-        drawChart(dogChart, pet.weights);
-        dogChartWrap.style.display = "block";
-      }
-      calcDog(false);
+  // ---- タブ切り替え ----
+  function switchTab(tab) {
+    const dogTab = document.getElementById("tabDog");
+    const catTab = document.getElementById("tabCat");
+    const dogSec = document.getElementById("dogSection");
+    const catSec = document.getElementById("catSection");
+
+    if (tab === "dog") {
+      dogTab.classList.add("active");
+      catTab.classList.remove("active");
+      dogSec.classList.add("active");
+      catSec.classList.remove("active");
+    } else {
+      dogTab.classList.remove("active");
+      catTab.classList.add("active");
+      dogSec.classList.remove("active");
+      catSec.classList.add("active");
     }
+  }
 
-    function calcDog(showAlert) {
-      const pet = getPetById(currentDogId);
-      if (!pet) return;
-      if (!pet.weights.length) {
-        dogResultBox.style.display = "none";
-        if (showAlert) alert("まず体重を記録してください。");
-        return;
-      }
-      const last = latestWeight(pet);
-      const w = last.weight;
-      const k = getK("dog", pet.activity);
-      const meals = pet.meals || 2;
-      const kcalPer100 = pet.kcal || parseFloat(dogFoodKcalInput.value);
-      if (!kcalPer100 || kcalPer100 <= 0) {
-        dogResultBox.style.display = "none";
-        if (showAlert) alert("フード100gあたりのカロリーを入力してください。");
-        return;
-      }
-      const RER = 70 * Math.pow(w, 0.75);
-      const DER = RER * k;
-      const dailyKcal = DER;
-      const dailyGram = dailyKcal / kcalPer100 * 100;
-      const perMealGram = dailyGram / meals;
+  // ---- イベント登録 ----
+  document.getElementById("tabDog").addEventListener("click", () => switchTab("dog"));
+  document.getElementById("tabCat").addEventListener("click", () => switchTab("cat"));
 
-      dogRerSpan.textContent = roundInt(RER);
-      dogDerSpan.textContent = roundInt(DER);
-      dogDailyGramSpan.textContent = roundInt(dailyGram);
-      dogPerMealGramSpan.textContent = roundInt(perMealGram);
-      dogResultBox.style.display = "block";
-    }
+  document.getElementById("dogSelect").addEventListener("change", () => onSelectChange("dog"));
+  document.getElementById("catSelect").addEventListener("change", () => onSelectChange("cat"));
 
-    // ---- 猫 ----
-    const catListEl = document.getElementById("catList");
-    const catNameInput = document.getElementById("catNameInput");
-    const addCatBtn = document.getElementById("addCatBtn");
-    const catDetailCard = document.getElementById("catDetailCard");
-    const catTitle = document.getElementById("catTitle");
-    const catWeightInput = document.getElementById("catWeightInput");
-    const catAddWeightBtn = document.getElementById("catAddWeightBtn");
-    const catLatestWeightText = document.getElementById("catLatestWeightText");
-    const catActivitySelect = document.getElementById("catActivitySelect");
-    const catActivityInfo = document.getElementById("catActivityInfo");
-    const catMealsSelect = document.getElementById("catMealsSelect");
-    const catFoodKcalInput = document.getElementById("catFoodKcalInput");
-    const catCalcBtn = document.getElementById("catCalcBtn");
-    const catResultBox = document.getElementById("catResultBox");
-    const catRerSpan = document.getElementById("catRerSpan");
-    const catDerSpan = document.getElementById("catDerSpan");
-    const catDailyGramSpan = document.getElementById("catDailyGram");
-    const catPerMealGramSpan = document.getElementById("catPerMealGram");
-    const catNoWeightMsg = document.getElementById("catNoWeightMsg");
-    const catWeightList = document.getElementById("catWeightList");
-    const catChartWrap = document.getElementById("catChartWrap");
-    const catChart = document.getElementById("catChart");
+  ["dogFoodKcal", "dogActivity", "dogMeals"].forEach(id => {
+    document.getElementById(id).addEventListener("change", () => recalc("dog"));
+  });
+  ["catFoodKcal", "catActivity", "catMeals"].forEach(id => {
+    document.getElementById(id).addEventListener("change", () => recalc("cat"));
+  });
 
-    let currentCatId = null;
-
-    function renderCatList() {
-      const cats = getPetsBySpecies("cat");
-      catListEl.innerHTML = "";
-      if (cats.length === 0) {
-        const span = document.createElement("span");
-        span.className = "small";
-        span.textContent = "まだ登録されていません。";
-        catListEl.appendChild(span);
-        catDetailCard.style.display = "none";
-        return;
-      }
-      cats.forEach(p => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "pet-chip" + (p.id === currentCatId ? " active" : "");
-        b.textContent = p.name;
-        b.onclick = () => {
-          currentCatId = p.id;
-          renderCatList();
-          showCat();
-        };
-        catListEl.appendChild(b);
-      });
-    }
-
-    addCatBtn.onclick = () => {
-      const name = catNameInput.value.trim();
-      if (!name) { alert("名前を入力してください。"); return; }
-      const pet = {
-        id: generateId(),
-        name,
-        species: "cat",
-        activity: "neutered",
-        meals: 2,
-        kcal: null,
-        weights: []
-      };
-      pets.push(pet);
-      savePets();
-      catNameInput.value = "";
-      currentCatId = pet.id;
-      renderCatList();
-      showCat();
-    };
-
-    catAddWeightBtn.onclick = () => {
-      const pet = getPetById(currentCatId);
-      if (!pet) return;
-      const w = parseFloat(catWeightInput.value);
-      if (!w || w <= 0) { alert("体重を正しく入力してください。"); return; }
-      pet.weights.push({ date: getToday(), weight: w });
-      savePets();
-      catWeightInput.value = "";
-      showCat();
-    };
-
-    catActivitySelect.onchange = () => {
-      const pet = getPetById(currentCatId);
-      if (!pet) return;
-      pet.activity = catActivitySelect.value;
-      savePets();
-      updateCatActivityInfo(pet);
-      calcCat(false);
-    };
-
-    catMealsSelect.onchange = () => {
-      const pet = getPetById(currentCatId);
-      if (!pet) return;
-      pet.meals = parseInt(catMealsSelect.value) || 2;
-      savePets();
-      calcCat(false);
-    };
-
-    catFoodKcalInput.onchange = () => {
-      const pet = getPetById(currentCatId);
-      if (!pet) return;
-      const v = parseFloat(catFoodKcalInput.value);
-      pet.kcal = v > 0 ? v : null;
-      savePets();
-      calcCat(false);
-    };
-
-    catCalcBtn.onclick = () => calcCat(true);
-
-    function updateCatActivityInfo(pet) {
-      const k = getK("cat", pet.activity);
-      catActivityInfo.textContent = `現在の係数: ${k}`;
-    }
-
-    function showCat() {
-      const pet = getPetById(currentCatId);
-      if (!pet) { catDetailCard.style.display = "none"; return; }
-      catDetailCard.style.display = "block";
-      catTitle.textContent = `猫：${pet.name}`;
-      catActivitySelect.value = pet.activity;
-      catMealsSelect.value = String(pet.meals || 2);
-      catFoodKcalInput.value = pet.kcal || "";
-      updateCatActivityInfo(pet);
-
-      if (!pet.weights.length) {
-        catNoWeightMsg.style.display = "block";
-        catWeightList.innerHTML = "";
-        catChartWrap.style.display = "none";
-        catLatestWeightText.textContent = "最新の体重: -";
-      } else {
-        catNoWeightMsg.style.display = "none";
-        catWeightList.innerHTML = "";
-        pet.weights.forEach(w => {
-          const li = document.createElement("li");
-          li.textContent = `${formatDate(w.date)} : ${w.weight} kg`;
-          catWeightList.appendChild(li);
-        });
-        const last = latestWeight(pet);
-        catLatestWeightText.textContent = `最新の体重: ${last.weight} kg（${formatDate(last.date)}）`;
-        drawChart(catChart, pet.weights);
-        catChartWrap.style.display = "block";
-      }
-      calcCat(false);
-    }
-
-    function calcCat(showAlert) {
-      const pet = getPetById(currentCatId);
-      if (!pet) return;
-      if (!pet.weights.length) {
-        catResultBox.style.display = "none";
-        if (showAlert) alert("まず体重を記録してください。");
-        return;
-      }
-      const last = latestWeight(pet);
-      const w = last.weight;
-      const k = getK("cat", pet.activity);
-      const meals = pet.meals || 2;
-      const kcalPer100 = pet.kcal || parseFloat(catFoodKcalInput.value);
-      if (!kcalPer100 || kcalPer100 <= 0) {
-        catResultBox.style.display = "none";
-        if (showAlert) alert("フード100gあたりのカロリーを入力してください。");
-        return;
-      }
-      const RER = 70 * Math.pow(w, 0.75);
-      const DER = RER * k;
-      const dailyKcal = DER;
-      const dailyGram = dailyKcal / kcalPer100 * 100;
-      const perMealGram = dailyGram / meals;
-
-      catRerSpan.textContent = roundInt(RER);
-      catDerSpan.textContent = roundInt(DER);
-      catDailyGramSpan.textContent = roundInt(dailyGram);
-      catPerMealGramSpan.textContent = roundInt(perMealGram);
-      catResultBox.style.display = "block";
-    }
-
-    // グラフ
-    function drawChart(svg, weights) {
-      while (svg.firstChild) svg.removeChild(svg.firstChild);
-      const w = svg.clientWidth || 300;
-      const h = svg.clientHeight || 150;
-      const pad = 24;
-      const n = weights.length;
-      if (!n) return;
-      const ys = weights.map(x => x.weight);
-      const minY = Math.min(...ys);
-      const maxY = Math.max(...ys);
-      const margin = (maxY - minY) * 0.2 || 0.2;
-      const yMin = minY - margin;
-      const yMax = maxY + margin;
-
-      function xScale(i) {
-        return pad + (w - pad * 2) * (i / Math.max(1, n - 1));
-      }
-      function yScale(val) {
-        return h - pad - (h - pad * 2) * ((val - yMin) / (yMax - yMin));
-      }
-
-      const axisX = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      axisX.setAttribute("x1", pad);
-      axisX.setAttribute("y1", h - pad);
-      axisX.setAttribute("x2", w - pad);
-      axisX.setAttribute("y2", h - pad);
-      axisX.setAttribute("stroke", "#ccc");
-      axisX.setAttribute("stroke-width", "1");
-      svg.appendChild(axisX);
-
-      const axisY = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      axisY.setAttribute("x1", pad);
-      axisY.setAttribute("y1", pad);
-      axisY.setAttribute("x2", pad);
-      axisY.setAttribute("y2", h - pad);
-      axisY.setAttribute("stroke", "#ccc");
-      axisY.setAttribute("stroke-width", "1");
-      svg.appendChild(axisY);
-
-      const points = weights.map((d, i) => `${xScale(i)},${yScale(d.weight)}`).join(" ");
-      const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-      poly.setAttribute("points", points);
-      poly.setAttribute("fill", "none");
-      poly.setAttribute("stroke", "#1976d2");
-      poly.setAttribute("stroke-width", "2");
-      svg.appendChild(poly);
-
-      weights.forEach((d, i) => {
-        const cx = xScale(i);
-        const cy = yScale(d.weight);
-        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        c.setAttribute("cx", cx);
-        c.setAttribute("cy", cy);
-        c.setAttribute("r", 3.5);
-        c.setAttribute("fill", "#1976d2");
-        svg.appendChild(c);
-      });
-    }
-
-    // 初期表示
-    renderDogList();
-    renderCatList();
-    const firstDog = getPetsBySpecies("dog")[0];
-    if (firstDog) { currentDogId = firstDog.id; showDog(); }
-    const firstCat = getPetsBySpecies("cat")[0];
-    if (firstCat) { currentCatId = firstCat.id; showCat(); }
-  </script>
+  // ---- 初期表示 ----
+  (function init() {
+    refreshSelect("dog");
+    refreshSelect("cat");
+  })();
+</script>
 </body>
 </html>
