@@ -2,209 +2,844 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>RER・DER & 給餌量計算アプリ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>フード量計算（多頭・犬猫対応）</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       padding: 16px;
       max-width: 480px;
       margin: 0 auto;
       line-height: 1.5;
+      background: #f5f5f5;
     }
     h1 {
       font-size: 20px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     h2 {
       font-size: 16px;
       margin-top: 24px;
+      margin-bottom: 8px;
       border-bottom: 1px solid #ddd;
       padding-bottom: 4px;
     }
-    label {
-      display: block;
-      margin-top: 12px;
-      font-size: 14px;
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      margin-bottom: 16px;
     }
-    select, input {
+    .form-group {
+      margin-bottom: 10px;
+    }
+    label {
+      font-size: 14px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    input[type="number"],
+    input[type="text"],
+    input[type="date"],
+    select {
       width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      font-size: 16px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
       box-sizing: border-box;
+    }
+    .inline-inputs {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .inline-inputs > * {
+      flex: 1;
+    }
+    .small {
+      font-size: 12px;
+      color: #666;
     }
     button {
       width: 100%;
       padding: 10px;
-      margin-top: 16px;
-      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #2c7be5;
+      color: #fff;
+      margin-top: 6px;
+    }
+    button.secondary {
+      background: #e0e0e0;
+      color: #333;
+      margin-top: 4px;
     }
     .result {
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-      background: #fafafa;
       font-size: 14px;
     }
-    .small-note {
+    .result strong {
+      display: inline-block;
+      min-width: 120px;
+    }
+    .note {
       font-size: 11px;
       color: #666;
       margin-top: 4px;
     }
+    .radio-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .radio-row label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 4px 6px;
+      text-align: center;
+    }
+    th {
+      background: #fafafa;
+    }
+    #currentPetLabel {
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    #latestWeightInfo {
+      font-size: 13px;
+      margin: 4px 0;
+    }
+    #latestWeightInfo span {
+      font-weight: 600;
+    }
+    #weightChart {
+      width: 100%;
+      height: 150px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+      margin-top: 6px;
+    }
+    #weightChart text {
+      font-size: 9px;
+      fill: #555;
+    }
+    #weightChart .axis {
+      stroke: #ccc;
+      stroke-width: 1;
+    }
+    #weightChart .line {
+      fill: none;
+      stroke: #2c7be5;
+      stroke-width: 2;
+    }
+    #weightChart .point {
+      fill: #2c7be5;
+      r: 3;
+    }
   </style>
 </head>
 <body>
+  <h1>フード量計算（多頭・犬猫対応）</h1>
+  <p class="small">
+    ペットごとに体重を記録し、最新体重と活動係数から RER/DER と給餌量を計算します。<br>
+    データはこの端末のブラウザ内に保存されます。
+  </p>
 
-<h1>RER・DER & 給餌量計算</h1>
+  <!-- ペット管理 -->
+  <div class="card">
+    <h2>ペット選択</h2>
+    <div class="form-group">
+      <label for="petSelect">ペットを選ぶ</label>
+      <select id="petSelect"></select>
+      <p id="currentPetLabel" class="small"></p>
+    </div>
 
-<!-- ① 犬か猫か選択 -->
-<label>
-  種類を選択
-  <select id="species" onchange="updateFactorOptions()">
-    <option value="dog">犬</option>
-    <option value="cat">猫</option>
-  </select>
-</label>
+    <details>
+      <summary class="small">＋ 新しい子を登録</summary>
+      <div class="form-group" style="margin-top:8px;">
+        <label for="newPetName">名前</label>
+        <input type="text" id="newPetName" placeholder="例: てつろう">
+      </div>
+      <div class="form-group">
+        <label for="newPetType">種類</label>
+        <select id="newPetType">
+          <option value="犬">犬</option>
+          <option value="猫">猫</option>
+        </select>
+      </div>
+      <button type="button" onclick="addPet()">ペットを追加</button>
+      <button type="button" class="secondary" onclick="deleteCurrentPet()">この子を削除</button>
+      <p class="note">※削除するとこの子の体重記録もすべて消えます。</p>
+    </details>
+  </div>
 
-<!-- ② 体重入力 -->
-<label>
-  体重（kg）
-  <input type="number" id="weight" step="0.1" placeholder="例：10">
-</label>
+  <!-- ① 基本情報（計算） -->
+  <div class="card">
+    <h2>① 計算条件（選択中の子に適用）</h2>
 
-<!-- ④ 活動指数（活動係数） -->
-<label>
-  活動係数（ライフステージ・活動量）
-  <select id="factor">
-    <!-- JSで中身を入れ替える -->
-  </select>
-</label>
+    <div id="latestWeightInfo" class="small">
+      体重記録がまだありません。下の「体重メモ」から体重を記録してください。
+    </div>
 
-<!-- フード情報 -->
-<h2>フード情報</h2>
+    <div class="form-group">
+      <label for="activity">活動レベル / 状態</label>
+      <select id="activity"></select>
+      <p class="note">
+        ※犬と猫で係数が異なります。<br>
+        避妊・去勢の有無や、高齢・減量などに合わせて選択してください。
+      </p>
+    </div>
 
-<!-- ⑥ 100gあたりのカロリー -->
-<label>
-  フードのカロリー（kcal / 100g）
-  <input type="number" id="kcalPer100g" step="1" placeholder="例：350">
-</label>
+    <div class="form-group">
+      <label for="kcalPer100g">フードのカロリー (kcal/100g)</label>
+      <input type="number" id="kcalPer100g" step="1" min="0" placeholder="例: 360">
+    </div>
 
-<label>
-  1日の給餌回数
-  <input type="number" id="mealsPerDay" step="1" value="2">
-</label>
-<div class="small-note">
-  例：朝・晩の2回なら「2」、朝昼晩なら「3」
-</div>
+    <div class="form-group">
+      <label for="mealsPerDay">1日の食事回数</label>
+      <select id="mealsPerDay">
+        <option value="1">1 回</option>
+        <option value="2" selected>2 回</option>
+        <option value="3">3 回</option>
+        <option value="4">4 回</option>
+      </select>
+    </div>
 
-<button onclick="calculate()">計算する</button>
+    <div class="form-group">
+      <label>小数点の表示</label>
+      <div class="radio-row">
+        <label><input type="radio" name="rounding" value="decimal" checked> 小数第1位まで</label>
+        <label><input type="radio" name="rounding" value="integer"> 整数に四捨五入</label>
+      </div>
+      <p class="note">※RER・DER・g数に適用されます。</p>
+    </div>
 
-<!-- 結果表示 -->
-<div class="result" id="resultBox" style="display:none;"></div>
+    <button type="button" onclick="calculate()">給餌量を計算する</button>
+  </div>
 
-<script>
-// 犬・猫ごとに活動係数の候補を用意
-const factorOptions = {
-  dog: [
-    { label: "成犬・去勢済み（1.6）", value: 1.6 },
-    { label: "成犬・未去勢（1.8）", value: 1.8 },
-    { label: "成犬・肥満傾向（1.4）", value: 1.4 },
-    { label: "減量中（1.0）", value: 1.0 },
-    { label: "活動的な成犬（2.0）", value: 2.0 },
-    { label: "子犬 0〜4ヶ月（3.0）", value: 3.0 },
-    { label: "子犬 4ヶ月〜成犬まで（2.0）", value: 2.0 }
-  ],
-  cat: [
-    { label: "室内・去勢済み（1.2）", value: 1.2 },
-    { label: "成猫・去勢済み（1.4）", value: 1.4 },
-    { label: "成猫・未去勢（1.6）", value: 1.6 },
-    { label: "肥満傾向（1.0）", value: 1.0 },
-    { label: "減量中（0.8）", value: 0.8 },
-    { label: "成長期の子猫（2.5）", value: 2.5 }
-  ]
-};
+  <!-- ② 計算結果 -->
+  <div class="card">
+    <h2>② 計算結果</h2>
+    <div id="result" class="result small">
+      体重を記録し、フードのカロリーを入力して「給餌量を計算する」を押すと結果が表示されます。
+    </div>
+  </div>
 
-// 種類が変わったらセレクトの中身を差し替え
-function updateFactorOptions() {
-  const species = document.getElementById("species").value;
-  const factorSelect = document.getElementById("factor");
-  factorSelect.innerHTML = "";
+  <!-- ③ 記録 -->
+  <div class="card">
+    <h2>③ 体重・運動量メモ（この子専用）</h2>
+    <div class="form-group">
+      <label for="logDate">日付</label>
+      <input type="date" id="logDate">
+    </div>
+    <div class="form-group inline-inputs">
+      <div>
+        <label for="logWeight">体重 (kg)</label>
+        <input type="number" id="logWeight" step="0.1" min="0">
+      </div>
+      <div>
+        <label for="logExercise">運動 (分)</label>
+        <input type="number" id="logExercise" step="1" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="logMemo">メモ</label>
+      <input type="text" id="logMemo" placeholder="例: ロング散歩 / トレーニングなど">
+    </div>
+    <button type="button" onclick="addLog()">今日の記録を追加</button>
+    <button type="button" class="secondary" onclick="clearLogs()">この子の記録をすべて削除</button>
+    <p class="note">※記録とグラフは、選択中のペットごとに分かれています。</p>
+  </div>
 
-  factorOptions[species].forEach(opt => {
-    const o = document.createElement("option");
-    o.value = opt.value;
-    o.textContent = opt.label;
-    factorSelect.appendChild(o);
-  });
-}
+  <!-- ④ 記録一覧 & グラフ -->
+  <div class="card">
+    <h2>④ 記録一覧 & 体重グラフ</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>日付</th>
+          <th>体重 (kg)</th>
+          <th>運動 (分)</th>
+          <th>メモ</th>
+        </tr>
+      </thead>
+      <tbody id="logTableBody"></tbody>
+    </table>
 
-// RER計算（犬・猫どちらも基本は同じ式）
-// RER = 70 × (体重kg ^ 0.75)
-function calcRER(weightKg) {
-  return 70 * Math.pow(weightKg, 0.75);
-}
+    <svg id="weightChart" viewBox="0 0 300 150">
+      <!-- グラフは JS で描画 -->
+    </svg>
+    <p class="note">※体重の記録が2件以上あると折れ線グラフを表示します。</p>
+  </div>
 
-function calculate() {
-  const species = document.getElementById("species").value;
-  const weight = parseFloat(document.getElementById("weight").value);
-  const factor = parseFloat(document.getElementById("factor").value);
-  const kcalPer100g = parseFloat(document.getElementById("kcalPer100g").value);
-  const mealsPerDay = parseInt(document.getElementById("mealsPerDay").value, 10);
+  <script>
+    /* ===== 活動係数テーブル ===== */
+    const DOG_FACTORS = [
+      { key: "dog_neutered", value: 1.6, label: "避妊・去勢している成犬 (1.6 × RER)" },
+      { key: "dog_intact",  value: 1.8, label: "避妊・去勢していない成犬 (1.8 × RER)" },
+      { key: "dog_weightloss", value: 1.0, label: "減量 (1.0 × RER)" },
+      { key: "dog_senior", value: 1.4, label: "高齢犬 (1.4 × RER)" }
+    ];
 
-  const resultBox = document.getElementById("resultBox");
+    const CAT_FACTORS = [
+      { key: "cat_neutered", value: 1.2, label: "避妊・去勢している成猫 (1.2 × RER)" },
+      { key: "cat_intact",   value: 1.4, label: "避妊・去勢していない成猫 (1.4 × RER)" },
+      { key: "cat_weightloss", value: 0.8, label: "減量 (0.8 × RER)" },
+      { key: "cat_senior",   value: 1.1, label: "高齢猫 (1.1 × RER)" }
+    ];
 
-  // 入力チェック
-  if (!weight || weight <= 0) {
-    resultBox.style.display = "block";
-    resultBox.innerHTML = "体重を正しく入力してください（例：10）";
-    return;
-  }
-  if (!factor || factor <= 0) {
-    resultBox.style.display = "block";
-    resultBox.innerHTML = "活動係数を選択してください。";
-    return;
-  }
-  if (!kcalPer100g || kcalPer100g <= 0) {
-    resultBox.style.display = "block";
-    resultBox.innerHTML = "フードの「kcal/100g」を入力してください。";
-    return;
-  }
-  if (!mealsPerDay || mealsPerDay <= 0) {
-    resultBox.style.display = "block";
-    resultBox.innerHTML = "1日の給餌回数を1以上で入力してください。";
-    return;
-  }
+    const PETS_KEY = "food_calc2_pets";
+    const LOG_KEY_BASE = "food_calc2_logs_";
 
-  // ③ RER計算
-  const RER = calcRER(weight);
+    let pets = [];
+    let currentPetId = null;
+    let latestWeight = null;
+    let latestWeightDate = null;
 
-  // ⑤ DER計算
-  const DER = RER * factor; // kcal / 日
+    /* ===== ペット管理 ===== */
+    function loadPets() {
+      const stored = localStorage.getItem(PETS_KEY);
+      if (stored) {
+        try {
+          pets = JSON.parse(stored) || [];
+        } catch (e) {
+          pets = [];
+        }
+      }
+      if (pets.length === 0) {
+        const defaultPet = {
+          id: "pet_" + Date.now(),
+          name: "わんこ1",
+          type: "犬",
+          activityKey: "dog_neutered" // デフォルト：避妊・去勢している成犬
+        };
+        pets.push(defaultPet);
+        currentPetId = defaultPet.id;
+        savePets();
+      } else if (!currentPetId) {
+        currentPetId = pets[0].id;
+      }
+      renderPetSelect();
+      updateCurrentPetLabel();
+      initActivitySelect(); // 種類に応じた活動係数リスト
+      loadLogs();
+    }
 
-  // フード 1g あたりのカロリー
-  const kcalPerGram = kcalPer100g / 100.0;
+    function savePets() {
+      localStorage.setItem(PETS_KEY, JSON.stringify(pets));
+    }
 
-  // ⑦ 1日の給餌量(g) と 1回あたり(g)
-  const gramsPerDay = DER / kcalPerGram;
-  const gramsPerMeal = gramsPerDay / mealsPerDay;
+    function renderPetSelect() {
+      const select = document.getElementById("petSelect");
+      select.innerHTML = "";
+      pets.forEach(pet => {
+        const option = document.createElement("option");
+        option.value = pet.id;
+        option.textContent = pet.name + "（" + pet.type + "）";
+        select.appendChild(option);
+      });
+      if (currentPetId) {
+        select.value = currentPetId;
+      }
+      select.onchange = () => {
+        currentPetId = select.value;
+        updateCurrentPetLabel();
+        initActivitySelect();
+        loadLogs();
+        clearResult(); // ペット切り替え時は表示をクリア
+      };
+    }
 
-  // 結果を表示
-  resultBox.style.display = "block";
-  resultBox.innerHTML =
-    `<strong>種類：</strong>${species === "dog" ? "犬" : "猫"}<br>` +
-    `<strong>体重：</strong>${weight.toFixed(1)} kg<br><br>` +
-    `<strong>RER：</strong>${RER.toFixed(1)} kcal/日<br>` +
-    `<strong>DER：</strong>${DER.toFixed(1)} kcal/日<br><br>` +
-    `<strong>フード：</strong>${kcalPer100g.toFixed(0)} kcal / 100g<br>` +
-    `<strong>1日の給餌量：</strong>${gramsPerDay.toFixed(1)} g / 日<br>` +
-    `<strong>1回あたり：</strong${""}>${gramsPerMeal.toFixed(1)} g × ${mealsPerDay}回/日`;
-}
+    function getCurrentPet() {
+      return pets.find(p => p.id === currentPetId) || null;
+    }
 
-// 初期表示で犬用の活動係数をセット
-updateFactorOptions();
-</script>
+    function updateCurrentPetLabel() {
+      const label = document.getElementById("currentPetLabel");
+      const pet = getCurrentPet();
+      if (!pet) {
+        label.textContent = "ペットが登録されていません。";
+        return;
+      }
+      label.textContent = `選択中: ${pet.name}（${pet.type}）`;
+    }
 
+    function addPet() {
+      const nameInput = document.getElementById("newPetName");
+      const typeInput = document.getElementById("newPetType");
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert("名前を入力してください。");
+        return;
+      }
+      const type = typeInput.value;
+      let defaultActivityKey = "dog_neutered";
+      if (type === "猫") defaultActivityKey = "cat_neutered";
+
+      const pet = {
+        id: "pet_" + Date.now(),
+        name: name,
+        type: type,
+        activityKey: defaultActivityKey
+      };
+      pets.push(pet);
+      currentPetId = pet.id;
+      savePets();
+      renderPetSelect();
+      updateCurrentPetLabel();
+      initActivitySelect();
+      loadLogs();
+      nameInput.value = "";
+    }
+
+    function deleteCurrentPet() {
+      const pet = getCurrentPet();
+      if (!pet) return;
+      if (!confirm(`${pet.name} を削除しますか？\n体重記録も消えます。`)) return;
+
+      pets = pets.filter(p => p.id !== pet.id);
+      localStorage.removeItem(LOG_KEY_BASE + pet.id);
+      savePets();
+
+      if (pets.length > 0) {
+        currentPetId = pets[0].id;
+      } else {
+        currentPetId = null;
+      }
+      renderPetSelect();
+      updateCurrentPetLabel();
+      initActivitySelect();
+      loadLogs();
+      clearResult();
+    }
+
+    /* ===== 活動係数まわり ===== */
+    function initActivitySelect() {
+      const select = document.getElementById("activity");
+      select.innerHTML = "";
+
+      const pet = getCurrentPet();
+      if (!pet) {
+        return;
+      }
+
+      const factors = pet.type === "猫" ? CAT_FACTORS : DOG_FACTORS;
+
+      factors.forEach(f => {
+        const option = document.createElement("option");
+        option.value = f.value;
+        option.dataset.key = f.key;
+        option.textContent = f.label;
+        select.appendChild(option);
+      });
+
+      // ペットに保存された activityKey を優先
+      let activityKey = pet.activityKey;
+      if (!activityKey) {
+        activityKey = (pet.type === "猫") ? "cat_neutered" : "dog_neutered";
+        pet.activityKey = activityKey;
+        savePets();
+      }
+
+      let matched = false;
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].dataset.key === activityKey) {
+          select.selectedIndex = i;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        select.selectedIndex = 0;
+        const opt = select.options[0];
+        pet.activityKey = opt ? opt.dataset.key : null;
+        savePets();
+      }
+
+      select.onchange = () => {
+        const opt = select.options[select.selectedIndex];
+        const key = opt.dataset.key;
+        const p = getCurrentPet();
+        if (p) {
+          p.activityKey = key;
+          savePets();
+        }
+        // 活動係数を変えたら再計算（体重とkcalが入っていれば）
+        calculate(true);
+      };
+    }
+
+    function getSelectedFactor() {
+      const select = document.getElementById("activity");
+      if (!select || select.selectedIndex < 0) return null;
+      const val = parseFloat(select.value);
+      if (!isFinite(val)) return null;
+      return val;
+    }
+
+    function getRoundingMode() {
+      const checked = document.querySelector('input[name="rounding"]:checked');
+      return checked ? checked.value : "decimal";
+    }
+
+    function formatValue(value) {
+      if (!isFinite(value)) return "-";
+      const mode = getRoundingMode();
+      if (mode === "integer") {
+        return Math.round(value);
+      } else {
+        return value.toFixed(1);
+      }
+    }
+
+    function clearResult() {
+      document.getElementById("result").innerHTML =
+        "体重を記録し、フードのカロリーを入力して「給餌量を計算する」を押すと結果が表示されます。";
+    }
+
+    /* ===== 計算 ===== */
+    function calculate(fromFactorChange) {
+      // 最新体重が必要
+      if (latestWeight == null) {
+        if (!fromFactorChange) {
+          document.getElementById("result").innerHTML =
+            '<span style="color:#c00;">体重記録がありません。下の「体重メモ」から体重を記録してください。</span>';
+        }
+        return;
+      }
+
+      const factor = getSelectedFactor();
+      const kcalPer100g = parseFloat(document.getElementById("kcalPer100g").value);
+      const mealsPerDay = parseFloat(document.getElementById("mealsPerDay").value || "1");
+
+      if (!factor) {
+        document.getElementById("result").innerHTML =
+          '<span style="color:#c00;">活動レベルを選択してください。</span>';
+        return;
+      }
+
+      if (!kcalPer100g || kcalPer100g <= 0) {
+        if (fromFactorChange) {
+          // 係数変更だけなら、DERまで表示してフード計算は保留でもOK
+          const RER = 70 * Math.pow(latestWeight, 0.75);
+          const DER = RER * factor;
+          const html =
+            `<p><strong>最新体重：</strong>${latestWeight.toFixed(1)} kg（${latestWeightDate || "-"}）</p>` +
+            `<p><strong>RER：</strong>${formatValue(RER)} kcal/日<br>` +
+            `<strong>DER：</strong>${formatValue(DER)} kcal/日 (${factor.toFixed(1)} × RER)</p>` +
+            `<p class="note">※フードのカロリー(kcal/100g)を入力すると、給餌量(g)を計算できます。</p>`;
+          document.getElementById("result").innerHTML = html;
+          return;
+        }
+        document.getElementById("result").innerHTML =
+          '<span style="color:#c00;">フードのカロリー (kcal/100g) を入力してください。</span>';
+        return;
+      }
+
+      const weight = latestWeight;
+      const weight075 = Math.pow(weight, 0.75);
+      const RER = 70 * weight075;
+      const DER = RER * factor;
+
+      const gramsPerDay = DER / kcalPer100g * 100;
+      const gramsPerMeal = gramsPerDay / mealsPerDay;
+
+      const kcalRounded = Math.round(kcalPer100g);
+
+      const html =
+        `<p><strong>最新体重：</strong>${weight.toFixed(1)} kg（${latestWeightDate || "-"}）</p>` +
+        `<p><strong>RER：</strong>${formatValue(RER)} kcal/日<br>` +
+        `<strong>DER：</strong>${formatValue(DER)} kcal/日 (${factor.toFixed(1)} × RER)</p>` +
+        `<p><strong>フードのカロリー：</strong>${kcalRounded} kcal/100g</p>` +
+        `<p><strong>1日の給餌量：</strong>${formatValue(gramsPerDay)} g / 日<br>` +
+        `<strong>1回あたり：</strong>${formatValue(gramsPerMeal)} g × ${mealsPerDay} 回</p>` +
+        `<p class="note">※あくまで目安です。体重の増減・ボディコンディションを見ながら調整してください。</p>`;
+
+      document.getElementById("result").innerHTML = html;
+    }
+
+    /* ===== 記録（ペットごと） ===== */
+    function getLogKey() {
+      if (!currentPetId) return LOG_KEY_BASE + "none";
+      return LOG_KEY_BASE + currentPetId;
+    }
+
+    function loadLogs() {
+      const key = getLogKey();
+      let logs = [];
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          logs = JSON.parse(stored) || [];
+        } catch (e) {
+          logs = [];
+        }
+      }
+      logs.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+      renderLogs(logs);
+      updateLatestWeightFromLogs(logs);
+      renderChart(logs);
+    }
+
+    function saveLogs(logs) {
+      const key = getLogKey();
+      localStorage.setItem(key, JSON.stringify(logs));
+    }
+
+    function renderLogs(logs) {
+      const tbody = document.getElementById("logTableBody");
+      tbody.innerHTML = "";
+      logs.forEach(log => {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          `<td>${log.date || ""}</td>` +
+          `<td>${log.weight != null ? log.weight.toFixed(1) : ""}</td>` +
+          `<td>${log.exercise != null ? log.exercise : ""}</td>` +
+          `<td>${log.memo || ""}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateLatestWeightFromLogs(logs) {
+      if (!logs || logs.length === 0) {
+        latestWeight = null;
+        latestWeightDate = null;
+        document.getElementById("latestWeightInfo").innerHTML =
+          '体重記録がまだありません。下の「体重メモ」から体重を記録してください。';
+        return;
+      }
+      const withWeight = logs.filter(l => l.weight != null && l.date);
+      if (withWeight.length === 0) {
+        latestWeight = null;
+        latestWeightDate = null;
+        document.getElementById("latestWeightInfo").innerHTML =
+          '体重記録がまだありません。下の「体重メモ」から体重を記録してください。';
+        return;
+      }
+      withWeight.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+      const last = withWeight[withWeight.length - 1];
+      latestWeight = last.weight;
+      latestWeightDate = last.date;
+      document.getElementById("latestWeightInfo").innerHTML =
+        `<span>最新体重：</span>${latestWeight.toFixed(1)} kg（${latestWeightDate}）`;
+    }
+
+    function addLog() {
+      if (!currentPetId) {
+        alert("先にペットを登録してください。");
+        return;
+      }
+
+      const dateInput = document.getElementById("logDate");
+      const weightInput = document.getElementById("logWeight");
+      const exerciseInput = document.getElementById("logExercise");
+      const memoInput = document.getElementById("logMemo");
+
+      if (!dateInput.value) {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        dateInput.value = `${y}-${m}-${d}`;
+      }
+
+      const weightVal = weightInput.value ? parseFloat(weightInput.value) : null;
+      const exerciseVal = exerciseInput.value ? parseInt(exerciseInput.value, 10) : null;
+      const memoVal = memoInput.value.trim();
+
+      if (weightVal == null && exerciseVal == null && !memoVal) {
+        alert("体重・運動・メモのどれか1つは入力してください。");
+        return;
+      }
+
+      const key = getLogKey();
+      let logs = [];
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          logs = JSON.parse(stored) || [];
+        } catch (e) {
+          logs = [];
+        }
+      }
+
+      logs.push({
+        date: dateInput.value,
+        weight: weightVal != null ? parseFloat(weightVal.toFixed(1)) : null,
+        exercise: exerciseVal,
+        memo: memoVal
+      });
+
+      logs.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+      saveLogs(logs);
+      renderLogs(logs);
+      updateLatestWeightFromLogs(logs);
+      renderChart(logs);
+
+      // 新しい体重が入ったので、kcal が入っていれば自動で再計算
+      if (document.getElementById("kcalPer100g").value) {
+        calculate(true);
+      }
+
+      weightInput.value = "";
+      exerciseInput.value = "";
+      memoInput.value = "";
+    }
+
+    function clearLogs() {
+      if (!currentPetId) return;
+      const pet = getCurrentPet();
+      if (!confirm(`${pet ? pet.name : "この子"} の体重記録をすべて削除しますか？`)) return;
+      const key = getLogKey();
+      localStorage.removeItem(key);
+      renderLogs([]);
+      updateLatestWeightFromLogs([]);
+      renderChart([]);
+      clearResult();
+    }
+
+    /* ===== 体重グラフ描画（SVG） ===== */
+    function renderChart(logs) {
+      const svg = document.getElementById("weightChart");
+      svg.innerHTML = "";
+
+      const weightLogs = logs.filter(l => l.weight != null && l.date);
+      if (weightLogs.length < 2) {
+        const msg = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        msg.setAttribute("x", "10");
+        msg.setAttribute("y", "20");
+        msg.textContent = "体重の記録が2件以上で折れ線グラフを表示します。";
+        svg.appendChild(msg);
+        return;
+      }
+
+      weightLogs.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+      const margin = { left: 30, right: 10, top: 10, bottom: 20 };
+      const width = 300;
+      const height = 150;
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+
+      const dates = weightLogs.map(l => new Date(l.date));
+      const weights = weightLogs.map(l => l.weight);
+
+      const minDate = dates[0].getTime();
+      const maxDate = dates[dates.length - 1].getTime();
+      const minW = Math.min.apply(null, weights);
+      const maxW = Math.max.apply(null, weights);
+      const wPadding = (maxW - minW) * 0.1 || 0.5;
+
+      const yMin = minW - wPadding;
+      const yMax = maxW + wPadding;
+
+      function xScale(t) {
+        if (maxDate === minDate) return margin.left + innerWidth / 2;
+        return margin.left + ((t - minDate) / (maxDate - minDate)) * innerWidth;
+      }
+      function yScale(w) {
+        if (yMax === yMin) return margin.top + innerHeight / 2;
+        return margin.top + innerHeight - ((w - yMin) / (yMax - yMin)) * innerHeight;
+      }
+
+      const axisX = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      axisX.setAttribute("x1", margin.left);
+      axisX.setAttribute("y1", margin.top + innerHeight);
+      axisX.setAttribute("x2", margin.left + innerWidth);
+      axisX.setAttribute("y2", margin.top + innerHeight);
+      axisX.setAttribute("class", "axis");
+      svg.appendChild(axisX);
+
+      const axisY = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      axisY.setAttribute("x1", margin.left);
+      axisY.setAttribute("y1", margin.top);
+      axisY.setAttribute("x2", margin.left);
+      axisY.setAttribute("y2", margin.top + innerHeight);
+      axisY.setAttribute("class", "axis");
+      svg.appendChild(axisY);
+
+      const yTicks = 3;
+      for (let i = 0; i <= yTicks; i++) {
+        const w = yMin + ((yMax - yMin) * i / yTicks);
+        const y = yScale(w);
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", margin.left);
+        line.setAttribute("x2", margin.left + innerWidth);
+        line.setAttribute("y1", y);
+        line.setAttribute("y2", y);
+        line.setAttribute("stroke", "#eee");
+        line.setAttribute("stroke-width", "1");
+        svg.appendChild(line);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", 2);
+        label.setAttribute("y", y + 3);
+        label.textContent = w.toFixed(1);
+        svg.appendChild(label);
+      }
+
+      const points = weightLogs.map(l => ({
+        x: xScale(new Date(l.date).getTime()),
+        y: yScale(l.weight)
+      }));
+
+      const pathData = points.map((p, i) =>
+        (i === 0 ? "M" : "L") + p.x + " " + p.y
+      ).join(" ");
+
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", pathData);
+      path.setAttribute("class", "line");
+      svg.appendChild(path);
+
+      points.forEach((p, i) => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", p.x);
+        circle.setAttribute("cy", p.y);
+        circle.setAttribute("r", 3);
+        circle.setAttribute("class", "point");
+        svg.appendChild(circle);
+
+        const lbl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        lbl.setAttribute("x", p.x + 3);
+        lbl.setAttribute("y", p.y - 4);
+        lbl.textContent = weightLogs[i].weight.toFixed(1);
+        svg.appendChild(lbl);
+      });
+
+      const first = weightLogs[0];
+      const last = weightLogs[weightLogs.length - 1];
+      const firstLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      firstLabel.setAttribute("x", margin.left);
+      firstLabel.setAttribute("y", height - 4);
+      firstLabel.textContent = first.date;
+      svg.appendChild(firstLabel);
+
+      const lastLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      lastLabel.setAttribute("x", margin.left + innerWidth - 60);
+      lastLabel.setAttribute("y", height - 4);
+      lastLabel.textContent = last.date;
+      svg.appendChild(lastLabel);
+    }
+
+    /* ===== 初期化 ===== */
+    loadPets();
+  </script>
 </body>
 </html>
