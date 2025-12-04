@@ -45,13 +45,8 @@
 
     h2 { font-size: 22px; margin: 0 0 8px; }
     h3 { font-size: 18px; margin: 0 0 8px; }
-
-    h4 {
-      font-size: 16px;
-      margin: 16px 0 4px;
-    }
-
-    p { margin: 4px 0; }
+    h4 { font-size: 16px; margin: 16px 0 4px; }
+    p  { margin: 4px 0; }
 
     /* タブ */
     .tab-bar {
@@ -139,6 +134,10 @@
       color: var(--primary);
       border: 1px solid var(--primary);
     }
+    .btn-danger {
+      background: var(--accent-red);
+      color: #fff;
+    }
 
     .button-row {
       display: flex;
@@ -148,7 +147,6 @@
     }
 
     small { font-size: 12px; color: var(--text-sub); }
-
     .muted { color: var(--text-sub); font-size: 14px; }
 
     /* 結果表示 */
@@ -218,7 +216,7 @@
 
     @media (min-width: 560px) {
       body { padding: 24px; font-size: 17px; }
-      h1 { font-size: 28px; }
+      h1  { font-size: 28px; }
     }
   </style>
 </head>
@@ -335,6 +333,11 @@
         <div class="result-label">1回あたりの給餌量</div>
         <div><span id="dogPerMealGram" class="highlight">--</span> g/回</div>
       </div>
+
+      <!-- 犬ごと削除 -->
+      <div class="field button-row" style="margin-top:16px; justify-content:flex-end;">
+        <button class="btn-danger" type="button" onclick="deletePet('dog')">この犬を削除</button>
+      </div>
     </div>
   </section>
 
@@ -403,6 +406,7 @@
         <select id="catActivity">
           <option value="neutered">避妊・去勢している成猫（1.2）</option>
           <option value="intact">避妊・去勢していない成猫（1.4）</option>
+          <option value="kitten">7ヶ月〜1歳の子猫（2.0）</option>
           <option value="diet">減量（0.8）</option>
           <option value="senior">高齢猫（1.1）</option>
         </select>
@@ -440,6 +444,11 @@
       <div class="result-row">
         <div class="result-label">1回あたりの給餌量</div>
         <div><span id="catPerMealGram" class="highlight">--</span> g/回</div>
+      </div>
+
+      <!-- 猫ごと削除 -->
+      <div class="field button-row" style="margin-top:16px; justify-content:flex-end;">
+        <button class="btn-danger" type="button" onclick="deletePet('cat')">この猫を削除</button>
       </div>
     </div>
   </section>
@@ -509,12 +518,59 @@
     onSelectChange("cat");
   }
 
+  // ====== ペット削除（犬・猫） ======
+  function deletePet(species) {
+    const listKey  = species === "dog" ? "dogs" : "cats";
+    const selectId = species === "dog" ? "dogSelect" : "catSelect";
+    const detailId = species === "dog" ? "dogDetailCard" : "catDetailCard";
+
+    const select = document.getElementById(selectId);
+    const idx = select.value;
+    if (idx === "") return;
+
+    const list = loadList(listKey);
+    const pet = list[idx];
+    if (!pet) return;
+
+    const label = species === "dog" ? "この犬" : "この猫";
+    if (!confirm(`${label}「${pet.name}」を削除しますか？\n（体重記録もすべて消えます）`)) return;
+
+    list.splice(idx, 1);
+    saveList(listKey, list);
+
+    // セレクト更新 & 詳細非表示 & 表示リセット
+    refreshSelect(species);
+    select.value = "";
+    document.getElementById(detailId).style.display = "none";
+    clearOutputs(species);
+  }
+
+  function clearOutputs(species) {
+    const isDog = species === "dog";
+    const rerId    = isDog ? "dogRer"          : "catRer";
+    const derId    = isDog ? "dogDer"          : "catDer";
+    const dailyId  = isDog ? "dogDailyGram"    : "catDailyGram";
+    const perMealId= isDog ? "dogPerMealGram"  : "catPerMealGram";
+    const canvasId = isDog ? "dogCanvas"       : "catCanvas";
+    const historyId= isDog ? "dogHistory"      : "catHistory";
+
+    document.getElementById(rerId).textContent = "-- kcal/日";
+    document.getElementById(derId).textContent = "-- kcal/日";
+    document.getElementById(dailyId).textContent = "--";
+    document.getElementById(perMealId).textContent = "--";
+
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    document.getElementById(historyId).innerHTML = "";
+  }
+
   // ====== セレクト変更時 ======
   function onSelectChange(species) {
     const selectId = species === "dog" ? "dogSelect" : "catSelect";
     const detailId = species === "dog" ? "dogDetailCard" : "catDetailCard";
-    const titleId = species === "dog" ? "dogTitle" : "catTitle";
-    const listKey = species === "dog" ? "dogs" : "cats";
+    const titleId  = species === "dog" ? "dogTitle" : "catTitle";
+    const listKey  = species === "dog" ? "dogs" : "cats";
 
     const select = document.getElementById(selectId);
     const idx = select.value;
@@ -523,6 +579,7 @@
 
     if (idx === "" || !list[idx]) {
       card.style.display = "none";
+      clearOutputs(species);
       return;
     }
 
@@ -551,8 +608,8 @@
   function addWeight(species) {
     const selectId = species === "dog" ? "dogSelect" : "catSelect";
     const weightId = species === "dog" ? "dogWeight" : "catWeight";
-    const dateId = species === "dog" ? "dogDate" : "catDate";
-    const listKey = species === "dog" ? "dogs" : "cats";
+    const dateId   = species === "dog" ? "dogDate"   : "catDate";
+    const listKey  = species === "dog" ? "dogs"      : "cats";
 
     const select = document.getElementById(selectId);
     const idx = select.value;
@@ -562,7 +619,7 @@
     }
 
     const weightInput = document.getElementById(weightId);
-    const dateInput = document.getElementById(dateId);
+    const dateInput   = document.getElementById(dateId);
 
     const w = parseFloat(weightInput.value);
     if (isNaN(w) || w <= 0) {
@@ -579,21 +636,20 @@
     const pet = list[idx];
 
     pet.weights.push({ date, value: w });
-    // 日付順にソート
     pet.weights.sort((a, b) => a.date.localeCompare(b.date));
-
     saveList(listKey, list);
+
     weightInput.value = "";
-    // 日付はそのまま残してもいいし、消してもいい → 今回は残す
+    // 日付は残す（連続入力しやすくする）
 
     renderWeights(species, pet.weights);
     recalc(species);
   }
 
-  // ====== 体重編集・削除 ======
+  // ====== 体重編集・削除（1件ずつ） ======
   function editWeight(species, index) {
     const listKey = species === "dog" ? "dogs" : "cats";
-    const selectId = species === "dog" ? "dogSelect" : "catSelect";
+    const selectId= species === "dog" ? "dogSelect" : "catSelect";
 
     const select = document.getElementById(selectId);
     const idx = select.value;
@@ -612,7 +668,6 @@
     }
 
     item.value = w;
-    // 日付はそのまま。必要なら削除→再追加で変えられる。
     pet.weights.sort((a, b) => a.date.localeCompare(b.date));
     saveList(listKey, list);
 
@@ -622,7 +677,7 @@
 
   function deleteWeight(species, index) {
     const listKey = species === "dog" ? "dogs" : "cats";
-    const selectId = species === "dog" ? "dogSelect" : "catSelect";
+    const selectId= species === "dog" ? "dogSelect" : "catSelect";
 
     const select = document.getElementById(selectId);
     const idx = select.value;
@@ -641,7 +696,7 @@
 
   // ====== グラフ・履歴描画（日付順） ======
   function renderWeights(species, weights) {
-    const canvasId = species === "dog" ? "dogCanvas" : "catCanvas";
+    const canvasId  = species === "dog" ? "dogCanvas" : "catCanvas";
     const historyId = species === "dog" ? "dogHistory" : "catHistory";
     const canvas = document.getElementById(canvasId);
     const ctx = canvas.getContext("2d");
@@ -659,7 +714,6 @@
       return;
     }
 
-    // 日付順に並んでいる前提でそのまま使う
     const values = weights.map(x => x.value);
     const minV = Math.min.apply(null, values);
     const maxV = Math.max.apply(null, values);
@@ -732,44 +786,46 @@
   function getActivityFactor(species, value) {
     if (species === "dog") {
       switch (value) {
-        case "intact": return 1.8;
+        case "intact":   return 1.8;
         case "neutered": return 1.6;
-        case "diet": return 1.0;
-        case "senior": return 1.4;
-        default: return 1.6;
+        case "diet":     return 1.0;
+        case "senior":   return 1.4;
+        default:         return 1.6;
       }
     } else {
+      // cat
       switch (value) {
-        case "intact": return 1.4;
+        case "intact":   return 1.4;
         case "neutered": return 1.2;
-        case "diet": return 0.8;
-        case "senior": return 1.1;
-        default: return 1.2;
+        case "kitten":   return 2.0;  // 7ヶ月〜1歳の子猫
+        case "diet":     return 0.8;
+        case "senior":   return 1.1;
+        default:         return 1.2;
       }
     }
   }
 
   // ====== 計算 ======
   function recalc(species) {
-    const isDog = species === "dog";
-    const selectId = isDog ? "dogSelect" : "catSelect";
-    const listKey = isDog ? "dogs" : "cats";
+    const isDog   = species === "dog";
+    const selectId= isDog ? "dogSelect"       : "catSelect";
+    const listKey = isDog ? "dogs"           : "cats";
 
-    const select = document.getElementById(selectId);
-    const idx = select.value;
-    const list = loadList(listKey);
-    const pet = list[idx];
+    const select  = document.getElementById(selectId);
+    const idx     = select.value;
+    const list    = loadList(listKey);
+    const pet     = list[idx];
 
-    const rerId = isDog ? "dogRer" : "catRer";
-    const derId = isDog ? "dogDer" : "catDer";
-    const dailyId = isDog ? "dogDailyGram" : "catDailyGram";
+    const rerId   = isDog ? "dogRer"         : "catRer";
+    const derId   = isDog ? "dogDer"         : "catDer";
+    const dailyId = isDog ? "dogDailyGram"   : "catDailyGram";
     const perMealId = isDog ? "dogPerMealGram" : "catPerMealGram";
-    const foodId = isDog ? "dogFoodKcal" : "catFoodKcal";
-    const actId = isDog ? "dogActivity" : "catActivity";
-    const mealId = isDog ? "dogMeals" : "catMeals";
+    const foodId  = isDog ? "dogFoodKcal"    : "catFoodKcal";
+    const actId   = isDog ? "dogActivity"    : "catActivity";
+    const mealId  = isDog ? "dogMeals"       : "catMeals";
 
-    const rerEl = document.getElementById(rerId);
-    const derEl = document.getElementById(derId);
+    const rerEl   = document.getElementById(rerId);
+    const derEl   = document.getElementById(derId);
     const dailyEl = document.getElementById(dailyId);
     const perMealEl = document.getElementById(perMealId);
 
@@ -786,6 +842,7 @@
       return;
     }
 
+    // 最新の体重（配列は日付順なので末尾を使用）
     const latest = pet.weights[pet.weights.length - 1].value;
     const rer = 70 * Math.pow(latest, 0.75);
 
